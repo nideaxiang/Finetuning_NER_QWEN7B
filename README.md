@@ -181,7 +181,7 @@ tokenizer.save_pretrained(output_path)
 ├── medical.dev            ✅ 验证数据
 ├── medical.test           🧪 测试数据
 ├── ccf_train.jsonl        🚫 负面样本数据
-├── train_7.5b.ipynb       🔥 训练 Notebook
+├── train_7b.ipynb       🔥 训练 Notebook
 ____train_0.5b.ipynb        0.5b的版本
 ├── infer.ipynb            🔮 推理 Notebook
 ├── train_raw.jsonl        📋 预处理后的训练数据
