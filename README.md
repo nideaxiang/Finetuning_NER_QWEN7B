@@ -112,12 +112,12 @@ swan记录：https://swanlab.cn/@duan_daniel/autodl-tmp/runs/ma8c865glg9qe1yq4pu
     - 遂换之 hug的镜像网站不再使用 ModelScope 社区的模型
     - 图标记录在swanlab:https://swanlab.cn/@duan_daniel/autodl-tmp/runs/q0sv01cbirbcs52ql3wtg/chart
 <img width="1942" height="945" alt="image" src="https://github.com/user-attachments/assets/23adb05c-305e-4b02-b876-26e64115d684" />
-
-    
-    - 验证集结果：<img width="1541" height="155" alt="image" src="https://github.com/user-attachments/assets/99d017f0-d5a5-4bdd-ac98-0e88b2f20ff1" />
+    - 验证集结果：
+    <img width="1541" height="155" alt="image" src="https://github.com/user-attachments/assets/99d017f0-d5a5-4bdd-ac98-0e88b2f20ff1" />
 
     - 最终结果：TrainOutput(global_step=782, training_loss=0.17069725311168318, metrics={'train_runtime': 5739.7057, 'train_samples_per_second': 2.181, 'train_steps_per_second': 0.136, 'total_flos': 1.3559249039914906e+17, 'train_loss': 0.17069725311168318, 'epoch': 1.9987220447284346})
-    -训练过程图表：https://swanlab.cn/@duan_daniel/autodl-tmp/runs/q0sv01cbirbcs52ql3wtg/chart
+
+训练过程图表：https://swanlab.cn/@duan_daniel/autodl-tmp/runs/q0sv01cbirbcs52ql3wtg/chart
     - 推理能力验证：
   ○ 正样本
 <img width="484" height="50" alt="image" src="https://github.com/user-attachments/assets/1d6b4ff8-86c5-4cb2-931b-6d517ad784ca" />
