@@ -73,6 +73,58 @@ pip install torch transformers peft datasets pandas modelscope swanlab
 - 📏 最大序列长度：512
 - 🎯 数据增强：加入 1000 条负面样本
 
+
+#### 训练记录
+- 训练记录1：绷不住了，一开始尝试用的0.5b的模型进行lora微调 在vGPU-48GB上居然能够内核爆掉很多次，然后调小了 Lora 秩和lora_alpha=16,一丁点儿微调的参数，
+显存占用可以到 30G
+<img width="198" height="89" alt="image" src="https://github.com/user-attachments/assets/62aa7884-a370-4ba6-a13a-edd8f7207b08" />
+
+我发现可能是因为 多个 JSON 字符串直接拼接在一起 ， 导致原来的正则表达式在处理长文本时，匹配压力呈几何倍数增长  ，在验证时候特别慢
+<img width="732" height="193" alt="image" src="https://github.com/user-attachments/assets/9e870185-a8e3-4925-93d3-b9ccdb09dd08" />
+
+这样确实能训练完，也能出结果，但是效率极低，验证一次一个小时。
+第500个step出的结果能够实现锁住格式，并且验证也正确
+<img width="715" height="149" alt="image" src="https://github.com/user-attachments/assets/a9b39802-8bff-4aa3-9bf9-25cf4363fece" />
+
+swan记录：https://swanlab.cn/@duan_daniel/autodl-tmp/runs/ma8c865glg9qe1yq4pund/chart
+所以尝试改进——》
+
+- 训练记录2：
+    - 换训练器：将transformers的Trainer换为 Seq2SeqTrainingArguments
+    - 开启生成模式： predict_with_generate=True
+    - 每步评估结果直接传回 CPU ： eval_accumulation_steps=1
+    - 优化一下metrics:我之前用的正则表达式的方法是“pattern = r'entity_text\s*:\s*"(.*?)",\s*entity_type\s*:\s*"(.*?)"'”
+  ○ 换为： entity_re = re.compile(r'\"entity_text\":\s*\"(.*?)\",\s*\"entity_label\":\s*\"(.*?)\"')  
+    - 小模型上的指标表现
+ 
+  <img width="1568" height="444" alt="image" src="https://github.com/user-attachments/assets/dae6050e-8401-4fb8-818d-3673223a29a3" />
+
+——》下面采用7b开始正式训练
+
+- 训练记录3：
+   - 模型：换用7b 
+   -  量化：量化包 bitsandbytes 很难搞，和torch的版本老是不匹配,我就干脆直接使用7bAWQ的版本进行微调，这也是qlora，不然显卡吃不消
+    - 结果又提示awq这个包很久没有维护了，要让用 optimum  这个包，结果安装了这个包也没有跑通，提示我要进行transformer的降级，一降级原来的很多包就失效了
+——》直接用7B lora吧
+
+训练记录4：
+    - 多次下载报错：safetensors integrity check failed, the download may be incomplete, please try again.
+    - 遂换之 hug的镜像网站不再使用 ModelScope 社区的模型
+    - 验证集结果：<img width="1541" height="155" alt="image" src="https://github.com/user-attachments/assets/99d017f0-d5a5-4bdd-ac98-0e88b2f20ff1" />
+
+    - 最终结果：TrainOutput(global_step=782, training_loss=0.17069725311168318, metrics={'train_runtime': 5739.7057, 'train_samples_per_second': 2.181, 'train_steps_per_second': 0.136, 'total_flos': 1.3559249039914906e+17, 'train_loss': 0.17069725311168318, 'epoch': 1.9987220447284346})
+    -训练过程图表：https://swanlab.cn/@duan_daniel/autodl-tmp/runs/q0sv01cbirbcs52ql3wtg/chart
+    - 推理能力验证：
+  ○ 正样本
+<img width="484" height="50" alt="image" src="https://github.com/user-attachments/assets/1d6b4ff8-86c5-4cb2-931b-6d517ad784ca" />
+
+  ○ 负样本
+<img width="327" height="75" alt="image" src="https://github.com/user-attachments/assets/2e407362-8a83-46ed-9bc6-5063188cf19e" />
+
+● dev上的验证:
+评估结果: {'eval_loss': 1.4311603307724, 'eval_model_preparation_time': 0.027, 'eval_方剂_f1': 0.5795053003117882, 'eval_中医诊断_f1': 0.6746987951343882, 'eval_中医证候_f1': 0.8384879724593192, 'eval_其他治疗_f1': 0.12844036696022218, 'eval_中医治疗_f1': 0.8457711442289547, 'eval_中药_f1': 0.49711723250582235, 'eval_西医治疗_f1': 0.75999999995136, 'eval_西医诊断_f1': 0.89811320749735, 'eval_临床表现_f1': 0.8641975308148826, 'eval_中医治则_f1': 0.6093749999566772, 'eval_f1': 0.6684931506403929, 'eval_precision': 0.5020576131687055, 'eval_recall': 0.9999999999999255, 'eval_runtime': 1229.6362, 'eval_samples_per_second': 0.534, 'eval_steps_per_second': 0.134}
+
+
 ### 🔮 推理
 
 运行 `infer.ipynb` Notebook 进行推理：
@@ -130,6 +182,7 @@ tokenizer.save_pretrained(output_path)
 ├── medical.test           🧪 测试数据
 ├── ccf_train.jsonl        🚫 负面样本数据
 ├── train_7.5b.ipynb       🔥 训练 Notebook
+____train_0.5b.ipynb        0.5b的版本
 ├── infer.ipynb            🔮 推理 Notebook
 ├── train_raw.jsonl        📋 预处理后的训练数据
 ├── dev.jsonl              📋 预处理后的验证数据
